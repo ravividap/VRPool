@@ -67,9 +67,11 @@ VRPool/
 | Android Build Support | (included with Unity) |
 | Meta Quest Developer Hub (optional) | latest |
 
+> 📖 **Full build and test instructions** — including Developer Mode setup, ADB configuration, sideloading, log streaming, wireless deployment, and a testing checklist — are in **[BUILDING_AND_TESTING.md](BUILDING_AND_TESTING.md)**.
+
 ---
 
-## Setup Instructions
+## Quick Start
 
 ### 1. Open the Project
 
@@ -83,16 +85,15 @@ VRPool/
 2. Under the **Android** tab, enable **OpenXR**.
 3. Under **OpenXR → Features**, enable:
    - **Meta Quest: Support**
-   - **Hand Tracking**
-   - **Controller Profile: Oculus Touch Controller Profile**
+   - **Oculus Touch Controller Profile**
+   - **Hand Tracking Subsystem** (optional)
 
-### 3. Build Settings
+### 3. Build and Deploy to Quest 3
 
-1. Go to **File → Build Settings**.
-2. Switch platform to **Android**.
-3. Set **Texture Compression** to **ASTC**.
-4. Enable **Development Build** for testing.
-5. Click **Build and Run** with your Quest 3 connected via USB.
+1. Enable **Developer Mode** on the headset (see [BUILDING_AND_TESTING.md § 2](BUILDING_AND_TESTING.md#2-enable-developer-mode-on-quest-3)).
+2. Connect Quest 3 via USB and accept the **Allow USB Debugging** prompt.
+3. In Unity: **File → Build Settings** → platform **Android** → ☑ **Development Build** → **Build and Run**.
+4. The APK is installed and launched automatically on the headset.
 
 ### 4. Scene Setup
 
