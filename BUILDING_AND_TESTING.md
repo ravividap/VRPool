@@ -1,437 +1,508 @@
-# Building and Testing VRPool on Meta Quest 3
+# VRPool — Complete Build & Deploy Guide (Beginner-Friendly)
 
-This guide walks you through every step needed to get VRPool running on a Meta Quest 3 headset — from first-time device setup through iterative test-and-debug cycles.
+> **Audience:** You've never built a VR app before. This guide walks you through every step — from installing software on your laptop to playing VRPool on your Meta Quest 3.
 
 ---
 
 ## Table of Contents
 
-1. [Prerequisites](#1-prerequisites)
-2. [Enable Developer Mode on Quest 3](#2-enable-developer-mode-on-quest-3)
-3. [Install and Configure ADB](#3-install-and-configure-adb)
-4. [Configure Unity for Android / Quest 3](#4-configure-unity-for-android--quest-3)
-5. [Build the APK](#5-build-the-apk)
-6. [Deploy to Quest 3](#6-deploy-to-quest-3)
-7. [Testing Checklist](#7-testing-checklist)
-8. [Viewing Logs and Debugging](#8-viewing-logs-and-debugging)
-9. [Wireless Deployment (optional)](#9-wireless-deployment-optional)
-10. [Performance Profiling](#10-performance-profiling)
-11. [Common Errors and Fixes](#11-common-errors-and-fixes)
+1. [What You'll Need (Hardware)](#1-what-youll-need-hardware)
+2. [Install Software on Your Laptop](#2-install-software-on-your-laptop)
+   - 2.1 [Install Unity Hub & Unity Editor](#21-install-unity-hub--unity-editor)
+   - 2.2 [Install Android Build Support](#22-install-android-build-support)
+   - 2.3 [Install Git (to clone the project)](#23-install-git-to-clone-the-project)
+3. [Set Up Your Meta Quest 3](#3-set-up-your-meta-quest-3)
+   - 3.1 [Create a Meta Developer Account](#31-create-a-meta-developer-account)
+   - 3.2 [Enable Developer Mode on the Headset](#32-enable-developer-mode-on-the-headset)
+   - 3.3 [Install ADB Drivers (Windows Only)](#33-install-adb-drivers-windows-only)
+4. [Clone & Open the VRPool Project](#4-clone--open-the-vrpool-project)
+5. [Let Unity Install Packages](#5-let-unity-install-packages)
+6. [Configure XR Settings in Unity](#6-configure-xr-settings-in-unity)
+   - 6.1 [Enable OpenXR for Android](#61-enable-openxr-for-android)
+   - 6.2 [Set OpenXR Feature Flags](#62-set-openxr-feature-flags)
+   - 6.3 [Fix the Orange Warning Triangle (Interaction Profile)](#63-fix-the-orange-warning-triangle-interaction-profile)
+7. [Configure Player Settings for Quest 3](#7-configure-player-settings-for-quest-3)
+8. [Scene Setup — Build the Game Scene](#8-scene-setup--build-the-game-scene)
+9. [Build the APK](#9-build-the-apk)
+10. [Deploy (Sideload) to Your Quest 3](#10-deploy-sideload-to-your-quest-3)
+    - 10.1 [USB Deployment (Recommended for First-Timers)](#101-usb-deployment-recommended-for-first-timers)
+    - 10.2 [Wireless Deployment (Optional)](#102-wireless-deployment-optional)
+11. [Launch & Play the Game](#11-launch--play-the-game)
+12. [Troubleshooting](#12-troubleshooting)
+13. [Glossary](#13-glossary)
 
 ---
 
-## 1. Prerequisites
+## 1. What You'll Need (Hardware)
 
-Install all of the following before continuing.
-
-### Software
-
-| Tool | Where to get it | Notes |
-|------|----------------|-------|
-| **Unity Hub** | [unity.com/download](https://unity.com/download) | Required to manage Unity versions |
-| **Unity 2022.3.22f1 LTS** | Unity Hub → Installs → Add | Must include **Android Build Support**, **Android SDK & NDK Tools**, and **OpenJDK** modules |
-| **Meta Quest Developer Hub (MQDH)** | [developer.oculus.com/meta-quest-developer-hub](https://developer.oculus.com/meta-quest-developer-hub/) | Simplifies sideloading and log viewing |
-| **Android SDK Platform-Tools** (ADB) | Bundled with Unity *or* [developer.android.com/tools/releases/platform-tools](https://developer.android.com/tools/releases/platform-tools) | Needed for command-line deployment |
-| **Meta developer account** | [developer.oculus.com](https://developer.oculus.com) | Free; required to create an Organisation for Developer Mode |
-| **Meta Quest mobile app** | iOS App Store / Google Play | Required to enable Developer Mode |
-
-### Unity Modules (must be installed)
-
-When installing Unity 2022.3.22f1 LTS via Unity Hub, tick these additional modules:
-
-- ☑ Android Build Support
-- ☑ Android SDK & NDK Tools
-- ☑ OpenJDK
-
-> **Tip:** To add modules to an existing Unity install, open Unity Hub → **Installs**, click the gear ⚙ next to 2022.3.22f1, and choose **Add Modules**.
+| Item | Notes |
+|------|-------|
+| **Laptop / Desktop** | Windows 10/11 (64-bit) or macOS 12+. At least 8 GB RAM, 20 GB free disk space. |
+| **Meta Quest 3 headset** | Fully charged, with a Meta account signed in. |
+| **USB-C cable** | A USB-C to USB-C (or USB-C to USB-A) data cable — the charging cable that came with your Quest works. |
+| **Wi-Fi** | Needed to download Unity, packages, and SDK files. |
 
 ---
 
-## 2. Enable Developer Mode on Quest 3
+## 2. Install Software on Your Laptop
 
-Developer Mode must be enabled on the headset before Unity or ADB can deploy to it.
+### 2.1 Install Unity Hub & Unity Editor
 
-### Step-by-step
+Unity is the game engine used to build VRPool. Unity Hub is the launcher that manages Unity versions.
 
-1. **Create or join a Meta developer organisation**
-   - Go to [developer.oculus.com/manage/organizations](https://developer.oculus.com/manage/organizations/) and sign in.
-   - If you don't have an organisation, click **Create New Organization**, accept the terms, and give it any name.
+1. Go to <https://unity.com/download>.
+2. Download and install **Unity Hub** for your OS.
+3. Open Unity Hub → click **Installs** (left sidebar) → **Install Editor**.
+4. Find **Unity 2022.3.22f1 LTS** in the list.
+   - If you can't find it, go to [Unity Archive](https://unity.com/releases/editor/archive) → select **2022.3.22f1** → click **Install**.
+   - 🔑 **It must be exactly `2022.3.22f1`** — other versions may cause package conflicts.
+5. On the **"Add modules"** screen, check the boxes described in the next section (2.2) before clicking Install.
 
-2. **Enable Developer Mode via the Meta Quest mobile app**
-   - Open the **Meta Quest** app on your phone.
-   - Ensure your Quest 3 is powered on and paired.
-   - Tap the **Menu** icon (bottom right) → **Devices** → select your Quest 3.
-   - Tap **Headset Settings** → **Developer Mode** → toggle **Developer Mode** on.
-   - Put on the headset and confirm the prompt that appears inside.
+> **What is LTS?** "Long Term Support" — it means this version gets bug fixes for 2+ years. It's the safest choice.
 
-3. **Verify inside the headset**
-   - Go to **Settings → System → Developer** — you should now see developer options (USB Connection Dialog, etc.).
+### 2.2 Install Android Build Support
+
+Quest 3 runs Android internally, so you need Android tools inside Unity.
+
+When installing Unity (step 2.1 above), check these modules:
+
+- ☑ **Android Build Support**
+- ☑ **Android SDK & NDK Tools** (sub-checkbox)
+- ☑ **OpenJDK** (sub-checkbox)
+
+> If Unity is already installed without these, go to **Unity Hub → Installs → gear icon ⚙️ on 2022.3.22f1 → Add Modules** and add them.
+
+### 2.3 Install Git (to clone the project)
+
+1. Go to <https://git-scm.com/downloads>.
+2. Download and install for your OS (accept defaults).
+3. Verify by opening a terminal / command prompt:
+   ```bash
+   git --version
+   ```
+   You should see something like `git version 2.43.0`.
 
 ---
 
-## 3. Install and Configure ADB
+## 3. Set Up Your Meta Quest 3
 
-ADB (Android Debug Bridge) lets you deploy APKs and stream logs from the command line.
+### 3.1 Create a Meta Developer Account
 
-### Option A — Use the ADB bundled with Unity
+1. On your **phone**, open the **Meta Horizon** app (formerly Oculus app).
+2. Make sure your Quest 3 is paired to the app.
+3. Go to <https://developer.oculus.com/> in a browser.
+4. Log in with the **same Meta account** you use on the headset.
+5. Create a new "Organization" (any name, e.g., your name). This is required to enable Developer Mode.
 
-Unity installs platform-tools alongside the Android SDK. The default path is:
+### 3.2 Enable Developer Mode on the Headset
 
-| OS | Path |
-|----|------|
-| Windows | `C:\Program Files\Unity\Hub\Editor\2022.3.22f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\` |
-| macOS | `/Applications/Unity/Hub/Editor/2022.3.22f1/PlaybackEngines/AndroidPlayer/SDK/platform-tools/` |
-| Linux | `~/Unity/Hub/Editor/2022.3.22f1/Editor/Data/PlaybackEngines/AndroidPlayer/SDK/platform-tools/` |
+1. Open the **Meta Horizon app** on your phone.
+2. Tap **Menu** → **Devices** → select your **Quest 3**.
+3. Tap **Headset Settings** → **Developer Mode**.
+4. Toggle **Developer Mode ON**.
+5. **Restart your Quest 3** (hold the power button → Restart).
 
-Add this directory to your system `PATH` environment variable so `adb` works in any terminal.
+> **Why?** Developer Mode lets your laptop talk to the headset via USB and install apps you build yourself (called "sideloading").
 
-### Option B — Install standalone Android platform-tools
+### 3.3 Install ADB Drivers (Windows Only)
 
-Download from [developer.android.com/tools/releases/platform-tools](https://developer.android.com/tools/releases/platform-tools), extract anywhere, and add the folder to `PATH`.
+ADB (Android Debug Bridge) lets your laptop communicate with the Quest over USB.
 
-### Connect Quest 3 via USB
+- **Windows:** Download the [Oculus ADB Drivers](https://developer.oculus.com/downloads/package/oculus-adb-drivers/) → unzip → right-click `android_winusb.inf` → **Install**.
+- **macOS / Linux:** ADB drivers are not needed; they work out of the box.
 
-1. Plug a **USB-C cable** from the Quest 3 to your computer.
-2. Put on the headset — a **"Allow USB Debugging?"** dialog will appear.
-   - Tap **Allow** (tick **Always allow from this computer** to avoid future prompts).
-3. Open a terminal and verify the connection:
+**Test the connection:**
 
+1. Plug your Quest 3 into your laptop via USB-C.
+2. **Put on the headset** — you'll see a popup: **"Allow USB Debugging?"** → check **"Always allow"** → tap **Allow**.
+3. On your laptop, open a terminal and run:
    ```bash
    adb devices
    ```
+   > If `adb` is not found, Unity bundled it here:
+   > - **Windows:** `C:\Program Files\Unity\Hub\Editor\2022.3.22f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools\adb.exe`
+   > - **macOS:** `/Applications/Unity/Hub/Editor/2022.3.22f1/PlaybackEngines/AndroidPlayer/SDK/platform-tools/adb`
 
-   Expected output:
-
+   You should see something like:
    ```
    List of devices attached
-   1XXXXXXXXXXXXXXX    device
+   1WMHH815T10034    device
+   ```
+   If it says `unauthorized`, put the headset on and accept the USB debugging prompt.
+
+---
+
+## 4. Clone & Open the VRPool Project
+
+1. Open a terminal / command prompt.
+2. Navigate to a folder where you want the project (e.g., `cd ~/Projects`).
+3. Clone the repo:
+   ```bash
+   git clone https://github.com/ravividap/VRPool.git
+   ```
+4. Open **Unity Hub** → click **Open** → navigate to the `VRPool` folder you just cloned → click **Open**.
+5. Unity Hub may ask which editor version to use — pick **2022.3.22f1**.
+6. Unity will open the project. **The first load takes 5–15 minutes** as it imports assets and compiles scripts. Let it finish — don't click around.
+
+---
+
+## 5. Let Unity Install Packages
+
+The project's `Packages/manifest.json` tells Unity which packages to download:
+
+| Package | Version | What It Does |
+|---------|---------|-------------|
+| Meta XR All-in-One SDK | 60.0.0 | Quest 3 headset & controller support |
+| Input System | 1.7.0 | Modern controller input handling |
+| XR Interaction Toolkit | 2.5.2 | Grab, point, and interact in VR |
+| XR Management | 4.4.0 | Manages XR loaders (OpenXR) |
+| OpenXR Plugin | 1.10.0 | The standard VR runtime |
+| TextMeshPro | 3.0.6 | Crisp text rendering for the HUD |
+| Universal Render Pipeline | 14.0.8 | Optimized graphics for mobile VR |
+| Physics, Audio, UI, XR modules | 1.0.0 | Core Unity systems |
+
+Unity should download these automatically. If prompted to import **TextMeshPro Essentials**, click **Import**.
+
+> **If packages fail to resolve:** Go to **Window → Package Manager** → click the refresh icon 🔄. Ensure you have internet.
+
+---
+
+## 6. Configure XR Settings in Unity
+
+### 6.1 Enable OpenXR for Android
+
+1. Go to **Edit → Project Settings** (menu bar at the top).
+2. In the left panel, click **XR Plug-in Management**.
+3. Click the **Android tab** (little Android robot icon 🤖).
+4. Check the box next to **OpenXR**.
+5. Wait for Unity to process — it may take a moment.
+
+> ⚠️ Make sure you're on the **Android tab**, not the Desktop/PC tab. The PC tab controls PC VR (not Quest).
+
+### 6.2 Set OpenXR Feature Flags
+
+1. Still in Project Settings, expand **XR Plug-in Management → OpenXR** (under the Android tab).
+2. Under **Enabled Interaction Profiles**, click the **+** button and add:
+   - **Oculus Touch Controller Profile**
+3. Under **OpenXR Feature Groups**, enable:
+   - ☑ **Meta Quest Support** (or "Meta Quest Feature Group")
+   - ☑ **Hand Tracking Subsystem** (optional — enable if you want hand tracking later)
+
+### 6.3 Fix the Orange Warning Triangle (Interaction Profile)
+
+If you see an orange ⚠️ triangle next to OpenXR:
+
+1. Click the triangle — Unity will tell you what's wrong.
+2. Usually it says "No interaction profile added." You fixed this in 6.2 above.
+3. Click **Fix All** if the button appears.
+
+---
+
+## 7. Configure Player Settings for Quest 3
+
+These settings are already in the repo's `ProjectSettings/ProjectSettings.asset`, but verify them:
+
+1. Go to **Edit → Project Settings → Player** (left panel).
+2. Click the **Android tab** 🤖.
+3. Verify / set these values:
+
+| Setting | Where to Find It | Value |
+|---------|------------------|-------|
+| **Company Name** | Player → Android | Anything (e.g., `DefaultCompany`) |
+| **Product Name** | Player → Android | `VRPool` |
+| **Package Name** | Other Settings → Identification | `com.DefaultCompany.VRPool` |
+| **Minimum API Level** | Other Settings → Identification | **Android 12L (API 32)** |
+| **Target API Level** | Other Settings → Identification | **Android 12L (API 32)** |
+| **Scripting Backend** | Other Settings → Configuration | **IL2CPP** (not Mono) |
+| **Target Architectures** | Other Settings → Configuration | ☑ **ARM64** |
+| **Color Space** | Other Settings → Rendering | **Linear** |
+| **Graphics API** | Other Settings → Rendering → Auto Graphics API OFF | **Vulkan** only (remove OpenGLES if present) |
+
+> **Why IL2CPP?** Quest 3 requires ARM64 builds, and Mono only supports x86. IL2CPP compiles your C# code to native ARM, which is faster too.
+
+> **Why Linear color space?** VR looks correct only in Linear mode. Gamma will make everything look washed out.
+
+---
+
+## 8. Scene Setup — Build the Game Scene
+
+The repo contains all the **scripts** but not a pre-built Unity scene. You need to assemble it once.
+
+### 8.1 Create the Scene
+
+1. In Unity's **Project** window (bottom panel), navigate to `Assets/Scenes/`.
+2. If `MainScene.unity` doesn't exist: right-click → **Create → Scene** → name it `MainScene`.
+3. **Double-click** `MainScene` to open it.
+4. Delete the default **Main Camera** (the VR rig will replace it).
+
+### 8.2 Add the XR Rig (Your VR Camera + Controllers)
+
+1. In the **Hierarchy** window (left panel), right-click → **XR → XR Origin (XR Rig)**.
+   - If you don't see the XR menu: go to **Window → Package Manager → XR Interaction Toolkit → Samples** → import **Starter Assets**.
+2. This creates a GameObject with a camera and two hand controllers. Position it at `(0, 0, 0)`.
+
+### 8.3 Build the Pool Table
+
+1. **Right-click Hierarchy → Create Empty** → name it `PoolTable`.
+2. Add the component: **Inspector → Add Component → search `PoolTableManager`** → add it.
+3. Inside `PoolTable`, create child GameObjects for:
+
+   **Table Surface:**
+   - Right-click `PoolTable` → **3D Object → Cube**.
+   - Name it `TableSurface`. Scale it to look like a pool table top (e.g., Scale `2.74, 0.05, 1.37` — standard 9-foot table in meters).
+   - In the Inspector, set its **Tag** to `TableSurface` (create the tag first via **Add Tag** if it doesn't exist).
+   - Add a **Box Collider** (already on Cubes by default).
+
+   **Cushions (6 sides):**
+   - Create 6 child Cubes inside `PoolTable`, name them `Cushion_Top`, `Cushion_Bottom`, `Cushion_Left`, etc.
+   - Position and scale them around the table edges.
+   - **Tag** each as `Cushion`.
+
+   **Pockets (6 triggers):**
+   - Create 6 child **Empty GameObjects** inside `PoolTable`, name them `Pocket_TopLeft`, `Pocket_TopMid`, etc.
+   - Position them at the 6 pocket locations (4 corners + 2 mid-sides).
+   - Add a **Sphere Collider** to each → check **Is Trigger** ☑.
+   - Add the **`PocketDetector`** component to each.
+
+### 8.4 Create the Balls
+
+1. **Right-click Hierarchy → Create Empty** → name it `Balls`.
+2. For each of the 16 balls (cue ball + 15 numbered):
+   - Right-click `Balls` → **3D Object → Sphere**.
+   - **Scale** each to `(0.056, 0.056, 0.056)` — diameter 0.056m = radius 0.028m.
+   - Add a **Rigidbody** component (for physics).
+   - Add **`BallController`** component.
+   - Add **`BallCollisionAudio`** component.
+   - **Tag** each as `Ball` (create the tag if needed).
+   - In the `BallController` Inspector:
+     - Set **Ball Number**: 0 for cue ball, 1–15 for the others.
+     - For the cue ball (number 0): check **Is Cue Ball** ☑.
+
+> **Tip:** Create one ball, configure it fully, then **duplicate** it 15 times (Ctrl+D / Cmd+D) and just change the ball number and material.
+
+### 8.5 Create the Cue Stick
+
+1. **Right-click Hierarchy → Create Empty** → name it `CueStick`.
+2. Add a child **3D Object → Cylinder** — scale it to look like a long thin cue (e.g., Scale `0.015, 0.7, 0.015`).
+3. Add the **`CueController`** component to the `CueStick` parent.
+4. Create an empty child called `CueTip` and position it at the thin end of the cue.
+5. Create an empty child called `PowerIndicator` and add the **`ShotPowerIndicator`** component.
+6. In the `CueController` Inspector:
+   - Drag `CueTip` into the **Cue Tip** field.
+   - Drag `PowerIndicator` into the **Shot Power Indicator** field.
+
+### 8.6 Create Game Systems
+
+1. **Right-click Hierarchy → Create Empty** → name it `GameSystems`.
+2. Add these components to it (Inspector → Add Component):
+   - `GameManager`
+   - `UIManager`
+   - `AudioManager`
+   - `BallRack`
+   - `GameInitializer`
+   - `AimGuide`
+   - `CueBallPlacement`
+   - `VRInputHandler`
+   - `WorldSpaceHUD`
+
+### 8.7 Wire Up Serialized Fields
+
+This is the most tedious but critical step. Each script has **public or `[SerializeField]`** fields in the Inspector that need references.
+
+1. Click `GameSystems` in the Hierarchy.
+2. For each component, drag the appropriate GameObjects / components into the empty fields:
+   - `GameManager` → likely needs references to `UIManager`, `BallRack`, `AudioManager`, all ball GameObjects, the cue ball, etc.
+   - `UIManager` → needs references to TextMeshPro text objects (create a **World Space Canvas** with text elements for Score, Shots, Balls Remaining).
+   - `BallRack` → needs references to the 15 numbered ball GameObjects.
+   - `AimGuide` → needs a **Line Renderer** component (add one to the same or child object).
+   - `CueBallPlacement` → needs a reference to the cue ball.
+
+> **How to know what to wire?** Click each component and look at the empty fields in the Inspector. Each field name tells you what to drag in. If a field says `cueBall`, drag the cue ball object there.
+
+### 8.8 Save the Scene
+
+- Press **Ctrl+S** (Cmd+S on Mac).
+
+---
+
+## 9. Build the APK
+
+An **APK** is an Android app file — it's what gets installed on the Quest.
+
+1. Go to **File → Build Settings**.
+2. In the **Platform** list on the left, click **Android**.
+3. Click **Switch Platform** (bottom-right). Wait for Unity to re-import (first time takes a few minutes).
+4. Settings to verify:
+   - **Run Device:** Select your Quest 3 (if plugged in and recognized).
+   - **Texture Compression:** ASTC (default, best for Quest).
+   - ☑ **Development Build** — enables debugging. Uncheck this for final builds.
+   - ☑ **Script Debugging** (optional — helps if something crashes).
+5. Click **Add Open Scenes** to add `MainScene` to the build list. Make sure it shows:
+   ```
+   ☑ Scenes/MainScene    0
+   ```
+6. Click **Build** (to create an APK file) or **Build and Run** (to build AND immediately install on the connected Quest).
+
+   - If you clicked **Build**: choose a folder (e.g., create a `Builds/` folder inside the project). Name the file `VRPool.apk`.
+   - If you clicked **Build and Run**: Unity will build the APK, push it via USB, and launch it on the headset automatically.
+
+> **⏱ First build takes 10–30 minutes** (IL2CPP compilation is slow the first time). Subsequent builds are faster.
+
+### Common Build Errors & Fixes
+
+| Error | Fix |
+|-------|-----|
+| `Android SDK not found` | Unity Hub → Installs → ⚙️ → Add Modules → Android SDK & NDK Tools |
+| `Gradle build failed` | Delete the `Library/` folder in the project and re-open Unity |
+| `No Android device found` | Make sure USB Debugging is allowed on the headset, and the cable supports data (not charge-only) |
+| `IL2CPP error` | Ensure you installed Android NDK via Unity Hub modules |
+| `Min API Level` error | Project Settings → Player → Android → Other Settings → Min API Level = 32 |
+
+---
+
+## 10. Deploy (Sideload) to Your Quest 3
+
+### 10.1 USB Deployment (Recommended for First-Timers)
+
+**Option A: Build and Run (easiest)**
+- Just click **Build and Run** in Build Settings (Step 9). Done! It installs and launches automatically.
+
+**Option B: Manual install with ADB**
+If you clicked **Build** and have a `VRPool.apk` file:
+
+1. Open a terminal / command prompt.
+2. Navigate to where `adb` lives (or add it to your system PATH):
+   ```bash
+   cd "C:\Program Files\Unity\Hub\Editor\2022.3.22f1\Editor\Data\PlaybackEngines\AndroidPlayer\SDK\platform-tools"
+   ```
+3. Install the APK:
+   ```bash
+   adb install -r "C:\path\to\your\VRPool.apk"
+   ```
+   The `-r` flag means "replace" if already installed.
+4. You should see:
+   ```
+   Performing Streamed Install
+   Success
    ```
 
-   If the status shows `unauthorized`, put on the headset again and accept the USB Debugging prompt.
+### 10.2 Wireless Deployment (Optional)
+
+Once you've done USB at least once, you can go wireless:
+
+1. Connect via USB and ensure `adb devices` shows your Quest.
+2. Run:
+   ```bash
+   adb tcpip 5555
+   ```
+3. Find the Quest's IP address: on the headset, go to **Settings → Wi-Fi → click your network → scroll down to IP address** (e.g., `192.168.1.42`).
+4. Unplug the USB cable.
+5. Run:
+   ```bash
+   adb connect 192.168.1.42:5555
+   ```
+6. Now you can do `adb install` wirelessly!
 
 ---
 
-## 4. Configure Unity for Android / Quest 3
+## 11. Launch & Play the Game
 
-### 4.1 Open the project
+1. On your Quest 3, go to **App Library** (the grid icon in your home menu).
+2. In the top-right, change the filter from **All** to **Unknown Sources**.
+3. You'll see **VRPool** — tap it to launch.
 
-1. Open **Unity Hub** → **Projects** → **Open** → select the `VRPool` folder.
-2. Wait for Unity to import assets and download packages (first open may take several minutes).
+### Controls
 
-### 4.2 Switch to Android platform
-
-1. **File → Build Settings** (`Ctrl+Shift+B` / `Cmd+Shift+B`).
-2. Select **Android** in the Platform list.
-3. Click **Switch Platform** and wait for reimport.
-
-### 4.3 Player Settings — Android
-
-Open **Edit → Project Settings → Player** (or click **Player Settings** in Build Settings) and set:
-
-| Setting | Value |
-|---------|-------|
-| Company Name | Your name |
-| Product Name | VRPool |
-| Package Name | `com.YourName.VRPool` |
-| Minimum API Level | **API 32 (Android 12L)** |
-| Target API Level | **API 32** |
-| Scripting Backend | **IL2CPP** |
-| Target Architectures | ☑ **ARM64** only (Quest 3 is 64-bit) |
-| Texture Compression | **ASTC** |
-| Internet Access | Not required |
-
-### 4.4 Configure XR Plug-in Management
-
-1. **Edit → Project Settings → XR Plug-in Management** → click the **Android** tab.
-2. Check **OpenXR**.
-3. Expand **OpenXR** in the left panel → **Features** tab.
-4. Enable:
-   - ☑ **Meta Quest: Support** (sets Quest-specific display settings)
-   - ☑ **Oculus Touch Controller Profile**
-   - ☑ **Hand Tracking Subsystem** (optional, for hand tracking)
-5. Set **Render Mode** to **Multi-pass** or **Single Pass Instanced** (Single Pass is more performant).
-
-### 4.5 Android SDK and NDK paths (if not auto-detected)
-
-Go to **Edit → Preferences → External Tools** and confirm Unity points to its bundled SDK/NDK/JDK, or set custom paths:
-
-| Field | Default Unity path |
-|-------|--------------------|
-| JDK | `<Unity install>/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK` |
-| SDK | `<Unity install>/Editor/Data/PlaybackEngines/AndroidPlayer/SDK` |
-| NDK | `<Unity install>/Editor/Data/PlaybackEngines/AndroidPlayer/NDK` |
+| Action | How |
+|--------|-----|
+| **Grab the cue stick** | Squeeze both controller grips at the same time |
+| **Aim** | While gripping, move controllers backward (pulling the cue back) |
+| **Shoot** | Release both grip triggers (like a real pool shot!) |
+| **Place cue ball (after scratch)** | Grip + move the cue ball to your desired position |
+| **Pause** | Press the **Menu button** (≡) on the left controller |
 
 ---
 
-## 5. Build the APK
+## 12. Troubleshooting
 
-### 5.1 Add the scene
+### The app doesn't appear on the Quest
+- Make sure you selected **Unknown Sources** in the App Library filter.
+- Verify the APK installed successfully (`adb install` showed `Success`).
 
-1. Ensure `Assets/Scenes/MainScene.unity` is in the **Scenes In Build** list.
-   - If not, open the scene and click **Add Open Scenes** in Build Settings.
+### Black screen when launching
+- You didn't add the XR Origin to the scene, or the scene wasn't added to Build Settings.
+- Verify: **File → Build Settings** → your scene must be checked with index `0`.
 
-### 5.2 Development build (recommended for testing)
+### Controllers don't work
+- In Project Settings → XR Plug-in Management → OpenXR → verify **Oculus Touch Controller Profile** is added.
 
-1. In **File → Build Settings**:
-   - ☑ **Development Build**
-   - ☑ **Script Debugging** (to see C# exceptions in logcat)
-   - ☑ **Wait For Managed Debugger** — leave **unchecked** unless you need to attach the debugger on launch.
-2. Click **Build** and choose an output folder (e.g., `Builds/`).
-   - Unity generates `VRPool.apk` (or `VRPool.aab` for app bundle).
+### Balls fall through the table / no physics
+- Ensure every ball has a **Rigidbody** and **Sphere Collider**.
+- Ensure the table surface has a **Box Collider** (not set as trigger).
 
-> The first build with IL2CPP takes 5–15 minutes. Subsequent builds are faster due to incremental compilation.
+### Unity says "Unsupported platform" or "No XR loader"
+- Project Settings → XR Plug-in Management → Android tab → check ☑ **OpenXR**.
+- Make sure you're on the **Android tab**, not the Desktop tab.
 
-### 5.3 Release build (for distribution)
+### Build takes forever
+- First IL2CPP build is slow (10–30 min). Subsequent builds reuse cached files and are much faster.
+- Enable **incremental builds**: Player → Other Settings → ☑ `Incremental IL2CPP Build`.
 
-1. Uncheck **Development Build**.
-2. Under **Player Settings → Publishing Settings**, create or select a **Keystore**:
-   - Click **Keystore Manager** → **Create New** → follow the prompts.
-   - Store the `.keystore` file and passwords securely — you cannot update the app without them.
-3. Click **Build**.
+### ADB says "unauthorized"
+- Put on the headset → accept the "Allow USB Debugging?" popup → check "Always allow."
 
----
-
-## 6. Deploy to Quest 3
-
-### Option A — Build and Run (one-click, fastest)
-
-With the Quest 3 connected via USB and `adb devices` showing `device`:
-
-1. In **File → Build Settings**, click **Build and Run**.
-2. Unity builds the APK and automatically installs + launches it on the headset.
-3. Put on the headset — the game launches immediately.
-
-### Option B — Manual ADB install
-
+### Streaming logs from the Quest (for debugging)
+Run this in a terminal while the app is running:
 ```bash
-# Install the APK
-adb install -r Builds/VRPool.apk
-
-# Launch the app (replace package name if changed)
-adb shell am start -n com.YourName.VRPool/com.unity3d.player.UnityPlayerActivity
+adb logcat -s Unity:* ActivityManager:* -v time
 ```
-
-`-r` flag reinstalls over an existing version without uninstalling first.
-
-### Option C — Meta Quest Developer Hub (GUI)
-
-1. Open **MQDH** → connect your headset (it should appear in the device list).
-2. Go to **Device Manager → App Manager**.
-3. Drag `VRPool.apk` onto the window, or click **Install APK** and browse to the file.
-4. The app appears under **Unknown Sources** in the headset library.
-
-### Finding the app on the headset
-
-After install, put on the Quest 3 and open the **App Library** → filter by **Unknown Sources** → tap **VRPool**.
+This shows Unity debug logs in real-time. Press `Ctrl+C` to stop.
 
 ---
 
-## 7. Testing Checklist
+## 13. Glossary
 
-Work through this checklist each time you deploy a new build.
-
-### Launch and orientation
-
-- [ ] App launches without a black screen or crash
-- [ ] Player spawns at the correct position facing the pool table
-- [ ] Pool balls are racked correctly (triangle formation)
-- [ ] World-space HUD is visible and readable
-
-### VR cue mechanics
-
-- [ ] Gripping both controllers shows the cue stick
-- [ ] Shot power indicator scales green → red as you pull back
-- [ ] Releasing the triggers fires the cue ball
-- [ ] Haptic feedback is felt on shot
-
-### Ball physics
-
-- [ ] Cue ball rolls and slows naturally (rolling friction)
-- [ ] Balls bounce off cushions at the correct angle
-- [ ] Pocketed balls disappear and the pocket count increments
-- [ ] A scratch (cue ball pocketed) triggers cue-ball-in-hand mode
-
-### Cue-ball-in-hand
-
-- [ ] Cue ball is grabbable and can be moved with a controller
-- [ ] Ball is constrained to the table surface height
-- [ ] Dropping the ball behind the head string completes the placement
-- [ ] Dropping outside the valid zone keeps placement mode active
-- [ ] HUD shows "Scratch! -5 points. Place the cue ball."
-
-### Aim guide
-
-- [ ] White dotted line extends from cue ball in the shot direction
-- [ ] Line stops at the first object ball encountered
-
-### Score and game flow
-
-- [ ] Score updates correctly (+1 solid, +2 stripe, +5 eight-ball, -5 scratch)
-- [ ] Pocketing all 15 balls transitions to the game-over screen
-- [ ] **Play Again** button resets and reruns correctly
-
-### Pause menu
-
-- [ ] Pressing the **Menu** button on the left controller opens the pause panel
-- [ ] Pressing again resumes gameplay
-- [ ] Time pauses (balls stop moving)
-
-### Audio
-
-- [ ] Ball-on-ball collision sound plays
-- [ ] Ball-on-cushion collision sound plays
-- [ ] Pocketed ball sound plays
-- [ ] Cue-strikes-ball sound plays
+| Term | Meaning |
+|------|---------|
+| **APK** | Android Package — the app file that gets installed on the Quest |
+| **ADB** | Android Debug Bridge — a command-line tool to communicate with Android devices (Quest is Android) |
+| **Sideload** | Installing an app on the Quest without going through the official Meta Store |
+| **OpenXR** | An open standard for VR/AR. Unity uses this to talk to the Quest hardware |
+| **IL2CPP** | A Unity compilation method that converts C# to C++ → native code. Required for ARM64 (Quest) |
+| **XR Origin / XR Rig** | The VR camera + controller tracking setup in Unity |
+| **Developer Mode** | A Quest setting that allows USB debugging and sideloading |
+| **Serialized Fields** | Variables in Unity scripts that show up in the Inspector and need to be connected to GameObjects |
+| **URP** | Universal Render Pipeline — Unity's optimized rendering for mobile and VR |
+| **Linear Color Space** | A color rendering mode required for correct VR visuals |
 
 ---
 
-## 8. Viewing Logs and Debugging
-
-### Stream Unity logs via ADB logcat
+## Quick Reference — Full Command Cheat Sheet
 
 ```bash
-# All Unity/Android output
-adb logcat -s Unity
+# Clone the project
+git clone https://github.com/ravividap/VRPool.git
 
-# Broader filter — includes Java/OpenXR errors
-adb logcat -s Unity:V AndroidRuntime:E
-```
+# Check if Quest is connected
+adb devices
 
-Press `Ctrl+C` to stop. Logs appear in real time as the app runs on the headset.
+# Install APK manually
+adb install -r ./Builds/VRPool.apk
 
-### Capture a crash log
+# Uninstall old version
+adb uninstall com.DefaultCompany.VRPool
 
-```bash
-adb logcat -d > crash_log.txt
-```
+# Stream logs
+adb logcat -s Unity:* -v time
 
-`-d` dumps the current log buffer to a file.
-
-### Unity Remote Debugger
-
-To attach the C# debugger in the Unity Editor to a running build on device:
-
-1. Build with **Development Build** + **Script Debugging** enabled.
-2. In Unity, go to **Edit → Attach to Unity Process** (or use your IDE's attach feature).
-3. Select the Quest 3 process from the list.
-
-> You can set breakpoints in Visual Studio / Rider and step through C# code running on the headset.
-
-### Meta Quest Developer Hub — Device Logs
-
-MQDH has a built-in log viewer:
-
-1. Open MQDH → **Device Manager** → select your headset.
-2. Click the **Logs** tab for a filtered, colour-coded view.
-
-### Viewing performance overlay on device
-
-Inside the Quest 3 headset:
-1. **Settings → Developer → Performance Overlay** → enable it.
-2. A HUD appears showing GPU %, CPU %, frame time, and dropped frames.
-
----
-
-## 9. Wireless Deployment (optional)
-
-Deploying over Wi-Fi lets you test without a cable attached.
-
-### Requirements
-
-- Quest 3 and your PC on the **same Wi-Fi network**.
-- ADB already authorised via USB at least once.
-
-### Steps
-
-```bash
-# 1. Connect via USB and enable TCP/IP mode on port 5555
+# Go wireless
 adb tcpip 5555
+adb connect <QUEST_IP>:5555
 
-# 2. Find the Quest 3 IP address (visible in Settings → Wi-Fi → connected network)
-# Example: 192.168.1.42
-
-# 3. Connect wirelessly
-adb connect 192.168.1.42:5555
-
-# 4. Verify
-adb devices
-# Should show:  192.168.1.42:5555   device
-
-# 5. You can now unplug the USB cable and use Build and Run or adb install normally
-```
-
-To return to USB mode:
-
-```bash
-adb usb
+# Take a screenshot from the Quest
+adb exec-out screencap -p > screenshot.png
 ```
 
 ---
 
-## 10. Performance Profiling
-
-Quest 3 targets **72 Hz** minimum, **90 Hz** recommended. Use the Unity Profiler to catch bottlenecks.
-
-### Unity Profiler over USB
-
-1. Build with **Development Build** + **Autoconnect Profiler** checked.
-2. In the Editor, open **Window → Analysis → Profiler**.
-3. Set the connection dropdown to **Android Player** (it appears when a dev build is running on device).
-4. The Profiler streams CPU, GPU, memory, and physics data in real time.
-
-### Key metrics to watch
-
-| Metric | Quest 3 target |
-|--------|---------------|
-| Frame time | ≤ 11 ms (90 Hz) |
-| CPU (Main thread) | ≤ 6 ms |
-| GPU | ≤ 9 ms |
-| Heap allocations per frame | 0 (avoid GC spikes) |
-| Draw calls | ≤ 100 |
-
-### Quest-specific tips
-
-- Enable **Fixed Foveated Rendering** in the OpenXR Meta Quest feature settings to reduce GPU load at screen edges.
-- Use **Single Pass Instanced** rendering (set in XR Plug-in Management → OpenXR).
-- Avoid `FindObjectOfType` and LINQ in hot paths — cache references in `Awake`/`Start`.
-- Keep ball collider count low; use `ContinuousDynamic` only on fast-moving balls.
-
----
-
-## 11. Common Errors and Fixes
-
-| Symptom | Likely cause | Fix |
-|---------|-------------|-----|
-| `adb devices` shows `unauthorized` | USB Debugging prompt not accepted | Put on headset, accept the "Allow USB Debugging?" dialog |
-| `adb devices` shows nothing | USB cable or driver issue | Try a different USB-C cable; install **Oculus ADB Drivers** on Windows from [developer.oculus.com/downloads](https://developer.oculus.com/downloads/package/oculus-adb-drivers/) |
-| Build fails: *"Android SDK not found"* | SDK path not configured | Go to **Edit → Preferences → External Tools** and point Unity to its bundled SDK |
-| Build fails: *"NDK not found"* | Same as above but NDK | Ensure **Android SDK & NDK Tools** module is installed via Unity Hub |
-| App installs but immediately crashes | IL2CPP strip error | Set **Managed Stripping Level** to **Minimal** in Player Settings |
-| Black screen after launch | OpenXR not initialised | Ensure **Meta Quest: Support** feature is enabled under XR Plug-in Management → OpenXR |
-| Controllers not tracked | Missing controller profile | Enable **Oculus Touch Controller Profile** under OpenXR Features |
-| App not visible in headset library | Installed under wrong source | Check **App Library → Unknown Sources** |
-| `INSTALL_FAILED_VERSION_DOWNGRADE` | Trying to install older APK over newer | `adb uninstall com.YourName.VRPool` then reinstall |
-| Extreme jitter on balls | Physics step too large | Ensure `Fixed Timestep` is `0.01111` (90 Hz) in **Edit → Project Settings → Time** |
-| HUD not visible in headset | WorldSpaceHUD `headTransform` not assigned | Assign the **Camera** (Main Camera under XR Origin) to the `headTransform` field |
-
----
-
-## Quick-Reference: Full Deploy Cycle
-
-```bash
-# 1. Verify device is connected
-adb devices
-
-# 2. Build from Unity (File → Build Settings → Build)
-#    → outputs Builds/VRPool.apk
-
-# 3. Install and launch
-adb install -r Builds/VRPool.apk
-adb shell am start -n com.YourName.VRPool/com.unity3d.player.UnityPlayerActivity
-
-# 4. Stream logs
-adb logcat -s Unity
-
-# 5. When done, stop the app
-adb shell am force-stop com.YourName.VRPool
-```
+**You're all set! 🎱 Put on your Quest 3 and enjoy VRPool.**
